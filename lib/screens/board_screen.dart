@@ -19,11 +19,30 @@ class BoardScreen extends StatefulWidget {
 
 class _BoardScreenState extends State<BoardScreen> {
   late Future<List<Job>> _jobs;
+  late bool _wasLoggedIn;
 
   @override
   void initState() {
     super.initState();
     _jobs = api.fetchJobs();
+    _wasLoggedIn = session.isLoggedIn;
+    session.addListener(_onSessionChanged);
+  }
+
+  @override
+  void dispose() {
+    session.removeListener(_onSessionChanged);
+    super.dispose();
+  }
+
+  /// Dopo login/logout l'elenco viene ricaricato: il login sostituisce la
+  /// propria schermata con l'area riservata, quindi al ritorno (logout) la
+  /// bacheca non saprebbe altrimenti che nel frattempo sono stati pubblicati
+  /// nuovi annunci.
+  void _onSessionChanged() {
+    if (session.isLoggedIn == _wasLoggedIn) return;
+    _wasLoggedIn = session.isLoggedIn;
+    if (mounted) _reload();
   }
 
   Future<void> _reload() async {
